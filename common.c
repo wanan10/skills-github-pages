@@ -1,4 +1,4 @@
-#include "sat_solver_c.h"
+#include "common.h"
 
 // ===== 整数动态数组实现 =====
 IntArray* intArrayCreate() {
@@ -45,7 +45,7 @@ int intArrayGet(IntArray* arr, int index) {
     if (index >= 0 && index < arr->size) {
         return arr->data[index];
     }
-    return 0; // 默认值
+    return 0;
 }
 
 void intArrayPop(IntArray* arr) {
@@ -130,7 +130,6 @@ ClauseArray* clauseArrayCreate() {
 void clauseArrayDestroy(ClauseArray* arr) {
     if (arr) {
         if (arr->data) {
-            // 清理每个子句的文字数组
             for (int i = 0; i < arr->size; i++) {
                 destroyClause(&arr->data[i]);
             }
@@ -161,4 +160,100 @@ Clause* clauseArrayGetPtr(ClauseArray* arr, int index) {
         return &arr->data[index];
     }
     return NULL;
+}
+
+// ===== 文字操作函数 =====
+Literal createLiteral(int var, bool sign) {
+    Literal lit;
+    lit.var = var;
+    lit.sign = sign;
+    return lit;
+}
+
+Literal negateLiteral(Literal lit) {
+    Literal negated;
+    negated.var = lit.var;
+    negated.sign = !lit.sign;
+    return negated;
+}
+
+bool literalEquals(Literal a, Literal b) {
+    return a.var == b.var && a.sign == b.sign;
+}
+
+// ===== 子句操作函数 =====
+Clause createClause(int id) {
+    Clause clause;
+    clause.literals.data = (Literal*)malloc(INITIAL_CAPACITY * sizeof(Literal));
+    clause.literals.size = 0;
+    clause.literals.capacity = INITIAL_CAPACITY;
+    clause.satisfied = false;
+    clause.id = id;
+    return clause;
+}
+
+void destroyClause(Clause* clause) {
+    if (clause && clause->literals.data) {
+        free(clause->literals.data);
+        clause->literals.data = NULL;
+    }
+}
+
+void clauseAddLiteral(Clause* clause, Literal lit) {
+    literalArrayPush(&clause->literals, lit);
+}
+
+int clauseSize(const Clause* clause) {
+    return clause->literals.size;
+}
+
+bool clauseIsEmpty(const Clause* clause) {
+    return clause->literals.size == 0;
+}
+
+// ===== CNF公式操作函数 =====
+CNFFormula* cnfFormulaCreate() {
+    CNFFormula* formula = (CNFFormula*)malloc(sizeof(CNFFormula));
+    if (!formula) return NULL;
+    
+    formula->clauses.data = (Clause*)malloc(INITIAL_CAPACITY * sizeof(Clause));
+    formula->clauses.size = 0;
+    formula->clauses.capacity = INITIAL_CAPACITY;
+    formula->numVars = 0;
+    formula->numClauses = 0;
+    formula->filename = NULL;
+    return formula;
+}
+
+void cnfFormulaDestroy(CNFFormula* formula) {
+    if (formula) {
+        if (formula->clauses.data) {
+            for (int i = 0; i < formula->clauses.size; i++) {
+                destroyClause(&formula->clauses.data[i]);
+            }
+            free(formula->clauses.data);
+        }
+        if (formula->filename) {
+            free(formula->filename);
+        }
+        free(formula);
+    }
+}
+
+void cnfFormulaAddClause(CNFFormula* formula, Clause clause) {
+    clauseArrayPush(&formula->clauses, clause);
+}
+
+// ===== 统计信息操作 =====
+void statsInit(SolverStats* stats) {
+    stats->startTime = 0;
+    stats->endTime = 0;
+    stats->decisions = 0;
+    stats->conflicts = 0;
+    stats->propagations = 0;
+    stats->backtracks = 0;
+}
+
+double statsGetSolvingTime(const SolverStats* stats) {
+    return ((double)(stats->endTime - stats->startTime) / CLOCKS_PER_SEC) * 1000.0;
 }
