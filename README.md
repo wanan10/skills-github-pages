@@ -1,3 +1,28 @@
+SAT Solver (DPLL) in C
+
+Features:
+- DIMACS CNF parsing and validation dump
+- DPLL with unit propagation, optional pure literal elimination
+- Heuristics: first, max-occurrence, Jeroslow–Wang (default), random
+- Timing (ms), decisions/propagations stats
+- Sudoku (9x9) to SAT encoder (basic)
+
+Build:
+
+```
+make        # optimized
+make debug  # with -g
+```
+
+Run:
+
+```
+bin/satsolver -i examples/simple.cnf
+bin/satsolver --validate -i examples/simple.cnf
+bin/satsolver -i examples/simple.cnf -H jw --no-pure -o result.txt
+```
+
+Examples are in `examples/`.
 <header>
 
 <!--
